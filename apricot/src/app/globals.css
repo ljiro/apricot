@@ -3,7 +3,16 @@
 @tailwind utilities;
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Google Sans", Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Google Docs-style focus and interactions */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid #1a73e8;
+  outline-offset: 2px;
 }
 
 @layer base {
@@ -88,7 +97,28 @@ body {
 }
 
 
-.tiptap{
+/* Collaboration cursor (other users) */
+.tiptap .collaboration-cursor__caret {
+  border-left: 1px solid #0d0d0d;
+  border-right: 1px solid #0d0d0d;
+  margin-left: -1px;
+  margin-right: -1px;
+  pointer-events: none;
+  position: relative;
+  word-break: normal;
+}
+.tiptap .collaboration-cursor__label {
+  border-radius: 3px;
+  font-size: 11px;
+  padding: 0.1rem 0.3rem;
+  position: absolute;
+  top: -1.4em;
+  left: -1px;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.tiptap {
 
   /*image specific styling */
   img {

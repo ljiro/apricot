@@ -9,3 +9,6 @@ npm install @tiptap/extension-image@2.10.2 --legacy-peer-deps
 npm install tiptap-extension-resize-image@1.2.1 --legacy-peer-deps
 
 npm install zustand@5.0.1 --legacy-peer-deps
+
+npm install @tiptap/extension-underline@2.10.2 --legacy-peer-deps
+

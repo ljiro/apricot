@@ -1,21 +1,20 @@
-import { Editor } from "./editor";
-import { Toolbar } from "./toolbar";
+import { Room } from "./room";
+import { DocumentShell } from "./document-shell";
+
 interface DocumentIdPageProps {
-    params : Promise<{documentId: string}>;
-};
-
-const DocumentIdPage = async ({params}: DocumentIdPageProps) => {
-
-    const {documentId} = await params;
-
-    return (
-        <div className="min-h-screen bg-[#FAFBFD]">
-           <Toolbar/>
-            <Editor/>
-        </div>
-    );
-     
+  params: Promise<{ documentId: string }>;
+  searchParams: Promise<{ template?: string }>;
 }
 
+const DocumentIdPage = async ({ params, searchParams }: DocumentIdPageProps) => {
+  const { documentId } = await params;
+  const { template } = await searchParams;
+
+  return (
+    <Room documentId={documentId}>
+      <DocumentShell documentId={documentId} template={template} />
+    </Room>
+  );
+};
 
 export default DocumentIdPage;

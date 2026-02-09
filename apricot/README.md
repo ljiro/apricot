@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Apricot
 
-## Getting Started
+A **live document editor** that multiple users can use at the same time. Built with Next.js, TipTap, and [Liveblocks](https://liveblocks.io) for real-time collaboration.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Real-time collaboration** — Changes sync instantly across all users in the same document
+- **Presence** — See who else is in the document (avatars in the toolbar)
+- **Collaborative cursors** — Other users’ cursors and names appear in the editor
+- **Rich text** — Bold, italic, underline, tables, task lists, images
+- **Per-document rooms** — Each document has its own room; share the URL to collaborate
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Install dependencies**
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+   ```bash
+   npm install
+   ```
 
-## Learn More
+2. **Configure Liveblocks**
 
-To learn more about Next.js, take a look at the following resources:
+   - Sign up at [liveblocks.io](https://liveblocks.io) and create a project
+   - Copy your **Secret Key** from [Dashboard → API Keys](https://liveblocks.io/dashboard/apikeys)
+   - Create a `.env.local` file in the project root:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   ```
+   LIVEBLOCKS_SECRET_KEY=sk_...
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3. **Run the dev server**
 
-## Deploy on Vercel
+   ```bash
+   npm run dev
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   Open [http://localhost:3000](http://localhost:3000). Use “New document” or go to `/documents` to create a document, then share the link so others can edit with you.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Project structure
+
+- `src/app/documents/` — Documents list and “new document” redirect
+- `src/app/documents/[documentId]/` — Editor page: `Room` (Liveblocks), `Editor` (TipTap + Yjs), `Toolbar`, `PresenceAvatars`
+- `src/app/api/liveblocks-auth/` — Liveblocks auth endpoint (issues session tokens)
+- `src/lib/liveblocks.config.ts` — Liveblocks client and room context
+
+## Tech stack
+
+- **Next.js 15** (App Router)
+- **TipTap** — Rich text editor (tables, tasks, images, etc.)
+- **Yjs** + **Liveblocks Yjs** — CRDT sync and persistence
+- **Liveblocks** — Real-time backend (rooms, presence, auth)
+- **Zustand** — Editor instance store for the toolbar
