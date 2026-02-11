@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { type Editor } from "@tiptap/react";
+import type { PaperFormatId } from "@/app/documents/[documentId]/paper-format";
 
 export type PendingSuggestion = {
   id: string;
@@ -19,6 +20,9 @@ interface EditorState {
   documentSuggestions: PendingSuggestion[];
   addDocumentSuggestion: (suggestion: PendingSuggestion) => void;
   removeDocumentSuggestion: (id: string) => void;
+  /** Paper size: a4, letter, legal */
+  pageFormat: PaperFormatId;
+  setPageFormat: (format: PaperFormatId) => void;
 }
 
 export const useEditorStore = create<EditorState>((set) => ({
@@ -33,4 +37,6 @@ export const useEditorStore = create<EditorState>((set) => ({
     set((s) => ({
       documentSuggestions: s.documentSuggestions.filter((p) => p.id !== id),
     })),
+  pageFormat: "a4",
+  setPageFormat: (pageFormat) => set({ pageFormat }),
 }));

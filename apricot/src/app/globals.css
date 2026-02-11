@@ -137,6 +137,48 @@ a:focus-visible,
   border-bottom: 1px solid rgba(245, 158, 11, 0.5);
 }
 
+/* Editor paper: visual page break line at each page height */
+.editor-paper-wrapper {
+  --editor-page-height: 1123px;
+  --editor-page-width: 794px;
+}
+.editor-paper {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(var(--editor-page-height) - 1px),
+    rgba(0, 0, 0, 0.06) calc(var(--editor-page-height) - 1px),
+    rgba(0, 0, 0, 0.06) var(--editor-page-height)
+  );
+  background-position: 0 0;
+  background-size: 100% var(--editor-page-height);
+}
+
+/* Print: page size and breaks */
+@media print {
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .editor-paper {
+    background-image: none !important;
+    box-shadow: none !important;
+  }
+  .editor-content-area {
+    break-inside: auto;
+  }
+  .tiptap p,
+  .tiptap h1,
+  .tiptap h2,
+  .tiptap h3,
+  .tiptap h4,
+  .tiptap ul,
+  .tiptap ol,
+  .tiptap table {
+    break-inside: avoid;
+  }
+}
+
 .tiptap {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 

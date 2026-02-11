@@ -23,6 +23,7 @@ import { getYjsProviderForRoom } from "@liveblocks/yjs";
 import { useEditorStore } from "@/app/store/use-editor-store";
 import { saveDocumentContent, getDocumentContent } from "@/lib/document-storage";
 import { TEMPLATE_CONTENT } from "./templates";
+import { PAPER_FORMATS } from "./paper-format";
 
 function isEmptyDoc(json: { content?: unknown[] }): boolean {
   if (!json.content || !Array.isArray(json.content)) return true;
@@ -45,7 +46,8 @@ function CollaborativeEditorInner({
 }) {
   const room = useRoom();
   const userInfo = useSelf((me) => me?.info);
-  const { setEditor } = useEditorStore();
+  const { setEditor, pageFormat } = useEditorStore();
+  const paper = PAPER_FORMATS[pageFormat];
   const templateAppliedRef = useRef(false);
   const restoredFromStorageRef = useRef(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -98,7 +100,7 @@ function CollaborativeEditorInner({
       attributes: {
         style: "padding-left: 56px; padding-right: 56px;",
         class:
-          "focus:outline-none print:border-0 bg-white flex flex-col min-h-[1123px] w-[794px] pt-10 pr-14 pb-10 cursor-text rounded-sm",
+          "focus:outline-none print:border-0 bg-white flex flex-col min-h-[var(--editor-page-height,1123px)] w-[var(--editor-page-width,794px)] pt-10 pr-14 pb-10 cursor-text rounded-sm editor-content-area",
       },
     },
     extensions: [
@@ -185,10 +187,51 @@ function CollaborativeEditorInner({
     };
   }, [editor, template, yProvider, documentId]);
 
+  useEffect(() => {
+    if (!editor?.view?.dom) return;
+    const el = editor.view.dom as HTMLElement;
+    el.style.setProperty("--editor-page-width", `${paper.widthPx}px`);
+    el.style.setProperty("--editor-page-height", `${paper.heightPx}px`);
+    el.style.minHeight = `${paper.heightPx}px`;
+    el.style.width = `${paper.widthPx}px`;
+  }, [editor, paper.widthPx, paper.heightPx]);
+
+  useEffect(() => {
+    const id = "apricot-print-page-size";
+    let styleEl = document.getElementById(id) as HTMLStyleElement | null;
+    if (!styleEl) {
+      styleEl = document.createElement("style");
+      styleEl.id = id;
+      styleEl.setAttribute("media", "print");
+      document.head.appendChild(styleEl);
+    }
+    const size =
+      pageFormat === "letter"
+        ? "215.9mm 279.4mm"
+        : pageFormat === "legal"
+          ? "215.9mm 355.6mm"
+          : "210mm 297mm";
+    styleEl.textContent = `@page { size: ${size}; margin: 15mm; }`;
+    return () => {
+      styleEl?.remove();
+    };
+  }, [pageFormat]);
+
   return (
     <div className="flex-1 overflow-x-auto bg-[#f8f9fa] px-4 print:p-0 print:bg-white print:overflow-visible">
-      <div className="min-w-max flex justify-center w-[794px] py-8 print:py-0 mx-auto print:w-full print:min-w-0">
-        <div className="relative shadow-[0_1px_3px_rgba(60,64,67,0.3)] rounded-sm bg-white">
+      <div
+        className="min-w-max flex justify-center py-8 print:py-0 mx-auto print:w-full print:min-w-0 editor-paper-wrapper"
+        data-paper-format={pageFormat}
+        style={{
+          width: paper.widthPx,
+          ["--editor-page-height" as string]: `${paper.heightPx}px`,
+          ["--editor-page-width" as string]: `${paper.widthPx}px`,
+        }}
+      >
+        <div
+          className="relative shadow-[0_1px_3px_rgba(60,64,67,0.3)] rounded-sm bg-white editor-paper"
+          style={{ minHeight: paper.heightPx }}
+        >
           <EditorContent editor={editor} />
           <SyncStorageToEditor />
           <SuggestionCardsOverlay />

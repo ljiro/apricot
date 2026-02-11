@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     JSON.stringify({
       model: geminiModel,
       messages: finalMessages,
-      max_tokens: 2048,
+      max_tokens: 8192,
     });
 
   try {
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify({
           model: "sonar",
           messages: finalMessages,
-          max_tokens: 2048,
+          max_tokens: 4096,
         }),
       });
       if (res.status === 429) {
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
           body: JSON.stringify({
             model: "sonar",
             messages: finalMessages,
-            max_tokens: 2048,
+            max_tokens: 4096,
           }),
         });
       }

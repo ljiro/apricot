@@ -26,9 +26,11 @@ import {
   Undo2Icon,
 } from "lucide-react";
 import { PresenceAvatars } from "./presence-avatars";
+import { PAPER_FORMATS, type PaperFormatId } from "./paper-format";
 
 const FONTS = ["Arial", "Helvetica", "Times New Roman", "Georgia", "Courier New", "Verdana"];
 const FONT_SIZES = ["8", "9", "10", "11", "12", "14", "18", "24", "36", "48", "72", "96"];
+const PAPER_OPTIONS: PaperFormatId[] = ["a4", "letter", "legal"];
 
 interface ToolbarButtonProps {
   onClick?: () => void;
@@ -52,7 +54,8 @@ const ToolbarButton = ({ onClick, isActive, icon: Icon, label }: ToolbarButtonPr
 );
 
 export const Toolbar = () => {
-  const { editor, inlineTextSelectionMode, setInlineTextSelectionMode } = useEditorStore();
+  const { editor, inlineTextSelectionMode, setInlineTextSelectionMode, pageFormat, setPageFormat } =
+    useEditorStore();
   const [hasSelection, setHasSelection] = useState(false);
 
   useEffect(() => {
@@ -85,6 +88,21 @@ export const Toolbar = () => {
           icon={PrinterIcon}
           onClick={() => window.print()}
         />
+        <div className="w-px h-6 bg-[#dadce0] mx-1" />
+
+        {/* Paper format */}
+        <Select value={pageFormat} onValueChange={(v) => setPageFormat(v as PaperFormatId)}>
+          <SelectTrigger className="h-8 w-[100px] border-0 bg-transparent shadow-none hover:bg-[#f1f3f4] rounded text-[13px] text-[#3c4043] font-normal gap-1 focus:ring-0 focus:ring-offset-0">
+            <SelectValue placeholder="Format" />
+          </SelectTrigger>
+          <SelectContent>
+            {PAPER_OPTIONS.map((id) => (
+              <SelectItem key={id} value={id} className="text-sm">
+                {PAPER_FORMATS[id].label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <div className="w-px h-6 bg-[#dadce0] mx-1" />
 
         {/* Font dropdown - visual only for now */}
