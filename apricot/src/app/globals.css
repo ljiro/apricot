@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-  font-family: "Google Sans", Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -118,7 +118,27 @@ a:focus-visible,
   white-space: nowrap;
 }
 
+/* Temporary highlight for "Ask AI about selection" — highlighter-style format */
+.tiptap .ai-selection-highlight {
+  background-color: #fef08a; /* highlighter yellow */
+  box-decoration-break: clone;
+  padding: 0.05em 0.08em;
+  margin: 0 -0.08em;
+  border-radius: 2px;
+}
+
+/* Pending suggestion range in the document (until Accept/Reject) */
+.tiptap .suggestion-range-highlight {
+  background-color: rgba(254, 243, 199, 0.85); /* amber tint */
+  box-decoration-break: clone;
+  padding: 0.05em 0.08em;
+  margin: 0 -0.08em;
+  border-radius: 2px;
+  border-bottom: 1px solid rgba(245, 158, 11, 0.5);
+}
+
 .tiptap {
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
 
   /*image specific styling */
   img {

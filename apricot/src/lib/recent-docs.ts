@@ -24,3 +24,12 @@ export function addRecentDoc(id: string, title: string) {
     // ignore
   }
 }
+
+export function removeRecentDoc(id: string) {
+  const recent = getRecentDocs().filter((d) => d.id !== id);
+  try {
+    localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(recent));
+  } catch {
+    // ignore
+  }
+}

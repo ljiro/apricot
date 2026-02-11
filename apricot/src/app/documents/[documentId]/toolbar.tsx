@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useEditorStore } from "@/app/store/use-editor-store";
 import { cn } from "@/lib/utils";
 import {
@@ -15,9 +16,11 @@ import {
   ListIcon,
   ListOrderedIcon,
   MessageSquareIcon,
+  PlusIcon,
   PrinterIcon,
   Redo2Icon,
   SpellCheckIcon,
+  SparklesIcon,
   StrikethroughIcon,
   UnderlineIcon,
   Undo2Icon,
@@ -49,7 +52,19 @@ const ToolbarButton = ({ onClick, isActive, icon: Icon, label }: ToolbarButtonPr
 );
 
 export const Toolbar = () => {
-  const { editor } = useEditorStore();
+  const { editor, inlineTextSelectionMode, setInlineTextSelectionMode } = useEditorStore();
+  const [hasSelection, setHasSelection] = useState(false);
+
+  useEffect(() => {
+    if (!editor) return;
+    const onSelectionUpdate = () => {
+      const { from, to } = editor.state.selection;
+      setHasSelection(from !== to);
+    };
+    onSelectionUpdate();
+    editor.on("selectionUpdate", onSelectionUpdate);
+    return () => editor.off("selectionUpdate", onSelectionUpdate);
+  }, [editor]);
 
   return (
     <div className="h-11 flex items-center justify-between gap-2 px-2 bg-white border-b border-[#e8eaed] shrink-0">
@@ -148,6 +163,31 @@ export const Toolbar = () => {
           }}
         />
         <ToolbarButton label="Comment" icon={MessageSquareIcon} onClick={() => {}} />
+        <div className="w-px h-6 bg-[#dadce0] mx-1" />
+        <button
+          type="button"
+          onClick={() => setInlineTextSelectionMode(!inlineTextSelectionMode)}
+          aria-label="Inline text selection"
+          title={inlineTextSelectionMode ? "Turn off: selection won’t be sent to AI" : "Turn on: next selection will be sent to AI when you ask"}
+          className={cn(
+            "flex items-center gap-1.5 h-8 px-2.5 rounded text-[13px] font-medium transition-colors",
+            inlineTextSelectionMode
+              ? "bg-[#e8f0fe] text-[#1967d2] hover:bg-[#d2e3fc] focus:bg-[#d2e3fc] focus:outline-none"
+              : "text-[#5f6368] hover:bg-[#f1f3f4] focus:bg-[#f1f3f4] focus:outline-none"
+          )}
+        >
+          <SparklesIcon className="size-4" />
+          <span>Inline text selection</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => document.dispatchEvent(new CustomEvent("apricot:add-ai-bubble"))}
+          aria-label="New AI assistant"
+          className="flex items-center gap-1.5 h-8 px-2.5 rounded text-[#5f6368] hover:bg-[#f1f3f4] focus:bg-[#f1f3f4] focus:outline-none transition-colors text-[13px] font-medium"
+        >
+          <PlusIcon className="size-4" />
+          <span>New AI</span>
+        </button>
       </div>
       <PresenceAvatars />
     </div>

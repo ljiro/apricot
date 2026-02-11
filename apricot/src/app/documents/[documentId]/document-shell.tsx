@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Editor } from "./editor";
 import { Toolbar } from "./toolbar";
 import { MenuBar } from "./menu-bar";
+import { AiChatPanel } from "./ai-chat-panel";
 import { addRecentDoc } from "@/lib/recent-docs";
 import { FileTextIcon } from "lucide-react";
 
@@ -96,7 +97,10 @@ export function DocumentShell({
 
       <MenuBar documentId={documentId} />
       <Toolbar />
-      <Editor documentId={documentId} template={template} />
+      <div className="flex-1 min-h-0 relative">
+        <Editor documentId={documentId} template={template} />
+        <AiChatPanel />
+      </div>
     </div>
   );
 }

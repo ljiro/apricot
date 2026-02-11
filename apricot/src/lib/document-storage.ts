@@ -22,3 +22,12 @@ export function getDocumentContent(documentId: string): DocumentContentJson | nu
     return null;
   }
 }
+
+export function deleteDocumentContent(documentId: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(`${CONTENT_STORAGE_PREFIX}${documentId}`);
+  } catch {
+    // ignore
+  }
+}

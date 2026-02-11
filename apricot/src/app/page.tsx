@@ -22,10 +22,17 @@ function generateDocumentId() {
 export default function Home() {
   const router = useRouter();
   const [recent, setRecent] = useState<RecentDoc[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     setRecent(getRecentDocs());
   }, []);
+
+  const filteredRecent = searchQuery.trim()
+    ? recent.filter((doc) =>
+        doc.title.toLowerCase().includes(searchQuery.trim().toLowerCase())
+      )
+    : recent;
 
   const openDocument = useCallback(
     (templateId?: string) => {
@@ -65,12 +72,14 @@ export default function Home() {
         <div className="flex-1 max-w-[720px] mx-4 hidden md:block">
           <div className="flex items-center h-10 px-4 rounded-lg bg-[#f1f3f4] border border-transparent hover:bg-[#e8eaed] focus-within:bg-white focus-within:shadow-[0_1px_6px_rgba(32,33,36,0.28)] focus-within:border-transparent transition-all">
             <SearchIcon className="w-5 h-5 text-[#5f6368] shrink-0" />
-            <Link
-              href="/documents"
-              className="flex-1 ml-3 text-sm text-[#5f6368] truncate bg-transparent border-none outline-none cursor-pointer"
-            >
-              Search documents
-            </Link>
+            <input
+              type="search"
+              placeholder="Search documents"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 ml-3 min-w-0 bg-transparent border-none outline-none text-sm text-[#3c4043] placeholder:text-[#5f6368]"
+              aria-label="Search documents"
+            />
           </div>
         </div>
 
@@ -139,9 +148,9 @@ export default function Home() {
         <section className="flex-1 overflow-auto bg-white">
           <div className="max-w-[960px] mx-auto py-8 px-6 md:px-10">
             <h2 className="text-[#3c4043] text-[22px] font-normal mb-4">Recent</h2>
-            {recent.length > 0 ? (
+            {filteredRecent.length > 0 ? (
               <div className="flex flex-wrap gap-4">
-                {recent.slice(0, 4).map((doc) => (
+                {filteredRecent.slice(0, 4).map((doc) => (
                   <Link
                     key={doc.id}
                     href={`/documents/${doc.id}`}
@@ -160,7 +169,9 @@ export default function Home() {
                 ))}
               </div>
             ) : (
-              <p className="text-[#5f6368] text-sm">No recent documents</p>
+              <p className="text-[#5f6368] text-sm">
+                {searchQuery.trim() ? "No documents match your search" : "No recent documents"}
+              </p>
             )}
           </div>
         </section>

@@ -13,6 +13,10 @@ import ImageResize from "tiptap-extension-resize-image";
 import Underline from "@tiptap/extension-underline";
 import Collaboration from "@tiptap/extension-collaboration";
 import CollaborationCursor from "@tiptap/extension-collaboration-cursor";
+import { HighlightSelectionExtension } from "./highlight-selection-extension";
+import { SuggestionRangesExtension } from "./suggestion-ranges-extension";
+import { SuggestionCardsOverlay } from "./suggestion-cards-overlay";
+import { SyncStorageToEditor } from "./sync-storage-to-editor";
 import { useMemo, useEffect, useRef } from "react";
 import { useRoom, useSelf } from "@/lib/liveblocks.config";
 import { getYjsProviderForRoom } from "@liveblocks/yjs";
@@ -117,6 +121,8 @@ function CollaborativeEditorInner({
       TableRow,
       TaskItem.configure({ nested: true }),
       TaskList,
+      HighlightSelectionExtension,
+      SuggestionRangesExtension,
     ],
   });
 
@@ -182,8 +188,10 @@ function CollaborativeEditorInner({
   return (
     <div className="flex-1 overflow-x-auto bg-[#f8f9fa] px-4 print:p-0 print:bg-white print:overflow-visible">
       <div className="min-w-max flex justify-center w-[794px] py-8 print:py-0 mx-auto print:w-full print:min-w-0">
-        <div className="shadow-[0_1px_3px_rgba(60,64,67,0.3)] rounded-sm bg-white">
+        <div className="relative shadow-[0_1px_3px_rgba(60,64,67,0.3)] rounded-sm bg-white">
           <EditorContent editor={editor} />
+          <SyncStorageToEditor />
+          <SuggestionCardsOverlay />
         </div>
       </div>
     </div>

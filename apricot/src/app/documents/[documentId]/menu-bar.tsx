@@ -1,14 +1,27 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useEditorStore } from "@/app/store/use-editor-store";
-import { saveDocumentContent } from "@/lib/document-storage";
+import { saveDocumentContent, deleteDocumentContent } from "@/lib/document-storage";
+import { removeRecentDoc } from "@/lib/recent-docs";
 import { toast } from "sonner";
 
 const MENU_ITEMS = [
@@ -21,8 +34,12 @@ const MENU_ITEMS = [
   "Help",
 ] as const;
 
+const TITLE_STORAGE_KEY = "apricot-doc-title";
+
 export function MenuBar({ documentId }: { documentId: string }) {
+  const router = useRouter();
   const { editor } = useEditorStore();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const handleSave = () => {
     if (!editor) return;
@@ -31,6 +48,26 @@ export function MenuBar({ documentId }: { documentId: string }) {
       toast.success("Saved");
     } catch {
       toast.error("Failed to save");
+    }
+  };
+
+  const handleDeleteDocument = async () => {
+    try {
+      const res = await fetch(`/api/documents/${documentId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Delete failed");
+      deleteDocumentContent(documentId);
+      try {
+        localStorage.removeItem(`${TITLE_STORAGE_KEY}-${documentId}`);
+      } catch {
+        // ignore
+      }
+      removeRecentDoc(documentId);
+      toast.success("Document deleted");
+      router.push("/");
+    } catch {
+      toast.error("Failed to delete document");
+    } finally {
+      setDeleteDialogOpen(false);
     }
   };
 
@@ -60,6 +97,12 @@ export function MenuBar({ documentId }: { documentId: string }) {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => window.print()} className="cursor-pointer">
                   Print
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setDeleteDialogOpen(true)}
+                  className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                >
+                  Delete document
                 </DropdownMenuItem>
               </>
             )}
@@ -96,6 +139,29 @@ export function MenuBar({ documentId }: { documentId: string }) {
           </DropdownMenuContent>
         </DropdownMenu>
       ))}
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete document?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this document and its Liveblocks room. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeleteDocument();
+              }}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
