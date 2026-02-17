@@ -54,50 +54,53 @@ export function DocumentShell({
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] flex flex-col">
-      {/* Top bar - Google Docs: logo + title */}
-      <header className="flex items-center gap-3 h-12 pl-2 pr-4 border-b border-[#e8eaed] bg-white shrink-0">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-[#5f6368] hover:text-[#3c4043] p-2 -ml-2 rounded-lg hover:bg-[#f1f3f4] transition-colors"
-        >
-          <FileTextIcon className="w-5 h-5" />
-          <span className="text-sm font-medium">Apricot</span>
-        </Link>
-        <div className="flex-1 min-w-0 flex items-center max-w-2xl">
-          {isEditingTitle ? (
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onBlur={() => {
-                saveTitle(title);
-                setIsEditingTitle(false);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
+      {/* Fixed top bar: logo, file name, File/Edit/View menu, format toolbar */}
+      <div className="fixed top-0 left-0 right-0 z-20 flex flex-col bg-white border-b border-[#e8eaed] print:hidden">
+        <header className="flex items-center gap-3 h-12 pl-2 pr-4 shrink-0">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-[#5f6368] hover:text-[#3c4043] p-2 -ml-2 rounded-lg hover:bg-[#f1f3f4] transition-colors"
+          >
+            <FileTextIcon className="w-5 h-5" />
+            <span className="text-sm font-medium">Apricot</span>
+          </Link>
+          <div className="flex-1 min-w-0 flex items-center max-w-2xl">
+            {isEditingTitle ? (
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onBlur={() => {
                   saveTitle(title);
                   setIsEditingTitle(false);
-                  (e.target as HTMLInputElement).blur();
-                }
-              }}
-              className="flex-1 min-w-0 bg-transparent border-none outline-none text-lg text-[#3c4043] px-2 py-1 -ml-2 rounded hover:bg-[#f1f3f4] focus:bg-white focus:ring-1 focus:ring-[#dadce0] focus:ring-inset"
-              autoFocus
-            />
-          ) : (
-            <button
-              type="button"
-              onClick={() => setIsEditingTitle(true)}
-              className="text-left flex-1 min-w-0 truncate text-lg text-[#3c4043] px-2 py-1 -ml-2 rounded hover:bg-[#f1f3f4] transition-colors"
-            >
-              {title}
-            </button>
-          )}
-        </div>
-      </header>
-
-      <MenuBar documentId={documentId} />
-      <Toolbar />
-      <div className="flex-1 min-h-0 relative">
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    saveTitle(title);
+                    setIsEditingTitle(false);
+                    (e.target as HTMLInputElement).blur();
+                  }
+                }}
+                className="flex-1 min-w-0 bg-transparent border-none outline-none text-lg text-[#3c4043] px-2 py-1 -ml-2 rounded hover:bg-[#f1f3f4] focus:bg-white focus:ring-1 focus:ring-[#dadce0] focus:ring-inset"
+                autoFocus
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsEditingTitle(true)}
+                className="text-left flex-1 min-w-0 truncate text-lg text-[#3c4043] px-2 py-1 -ml-2 rounded hover:bg-[#f1f3f4] transition-colors"
+              >
+                {title}
+              </button>
+            )}
+          </div>
+        </header>
+        <MenuBar documentId={documentId} />
+        <Toolbar />
+      </div>
+      {/* Spacer: same height as fixed bar (h-12 + h-8 + h-11 = 124px) so content doesn't sit under it */}
+      <div className="h-[7.75rem] shrink-0 print:hidden" aria-hidden="true" />
+      <div className="flex-1 min-h-0 relative flex flex-col">
         <Editor documentId={documentId} template={template} />
         <AiChatPanel />
       </div>

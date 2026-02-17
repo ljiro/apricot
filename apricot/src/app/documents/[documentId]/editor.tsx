@@ -220,7 +220,7 @@ function CollaborativeEditorInner({
   }, [pageFormat]);
 
   return (
-    <div className="flex-1 overflow-x-auto bg-[#f8f9fa] px-4 print:p-0 print:bg-white print:overflow-visible">
+    <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto bg-[#f8f9fa] px-4 print:p-0 print:bg-white print:overflow-visible">
       <div
         className="min-w-max flex justify-center py-8 print:py-0 mx-auto print:w-full print:min-w-0 editor-paper-wrapper"
         data-paper-format={pageFormat}

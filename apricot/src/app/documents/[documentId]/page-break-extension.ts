@@ -47,11 +47,14 @@ export const PageBreak = Node.create({
   addProseMirrorPlugins() {
     let raf: number | null = null;
     let applying = false;
+    // Run after layout so coordsAtPos is stable (avoids infinite re-insertion)
     const schedule = (fn: () => void) => {
       if (raf != null) cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
-        raf = null;
-        fn();
+        raf = requestAnimationFrame(() => {
+          raf = null;
+          fn();
+        });
       });
     };
 
@@ -59,18 +62,32 @@ export const PageBreak = Node.create({
       new Plugin({
         key: PAGINATION_KEY,
         view(view) {
+          let lastContentDigest = "";
+
           const run = () => {
             // Avoid feedback loops from our own transactions
             if (applying) return;
-
-            const pageHeight = readPageHeightPx(view.dom as HTMLElement);
-            const gap = PAGE_GAP_PX;
-            const slot = pageHeight + gap;
 
             const doc = view.state.doc;
             const schema = view.state.schema;
             const breakType = schema.nodes.pageBreak;
             if (!breakType) return;
+
+            // Digest of content without page breaks so we don't re-run on every update (stops infinite churn)
+            const parts: string[] = [];
+            let idx = 0;
+            doc.forEach((node) => {
+              if (node.type === breakType) return;
+              parts.push(node.type.name + ":" + idx + ":" + node.nodeSize);
+              idx++;
+            });
+            const contentDigest = parts.join(",");
+            if (contentDigest === lastContentDigest) return;
+            lastContentDigest = contentDigest;
+
+            const pageHeight = readPageHeightPx(view.dom as HTMLElement);
+            const gap = PAGE_GAP_PX;
+            const slot = pageHeight + gap;
             const breakNode = breakType.create();
             const breakSize = breakNode.nodeSize;
 
@@ -86,7 +103,6 @@ export const PageBreak = Node.create({
 
             const desiredInsertPos: number[] = [];
             let plannedBreaks = 0;
-            let currentPage = 0;
 
             // Iterate top-level blocks; insert breaks before blocks that would start past the page bottom.
             doc.forEach((node, offset) => {
@@ -100,17 +116,22 @@ export const PageBreak = Node.create({
                 else break;
               }
 
+              // Current page in our simulation = number of breaks before this block
+              const currentPage = breaksBefore + plannedBreaks;
+
               // coordsAtPos expects a position inside the node
               const coords = view.coordsAtPos(Math.min(pos + 1, doc.content.size));
               const yWithBreaks = coords.top - baseTop;
               const yWithoutBreaks = yWithBreaks - breaksBefore * gap;
-              let predictedY = yWithoutBreaks + plannedBreaks * gap;
+              const predictedY = yWithoutBreaks + plannedBreaks * gap;
 
               if (predictedY - currentPage * slot >= pageHeight) {
-                // insert exactly one break before this node
-                plannedBreaks++;
-                currentPage++;
-                desiredInsertPos.push(pos);
+                // Don't insert consecutive breaks: if previous node is already a break, we're on a new page
+                const nodeBefore = doc.resolve(pos - 1).nodeBefore;
+                if (nodeBefore?.type !== breakType) {
+                  plannedBreaks++;
+                  desiredInsertPos.push(pos);
+                }
               }
             });
 
