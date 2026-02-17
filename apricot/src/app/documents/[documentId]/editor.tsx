@@ -17,23 +17,48 @@ import { HighlightSelectionExtension } from "./highlight-selection-extension";
 import { SuggestionRangesExtension } from "./suggestion-ranges-extension";
 import { SuggestionCardsOverlay } from "./suggestion-cards-overlay";
 import { SyncStorageToEditor } from "./sync-storage-to-editor";
-import { PageBreak } from "./page-break-extension";
+import { DocumentWithPages } from "./document-with-pages-extension";
+import { PageNode, getDefaultDoc } from "./page-node-extension";
 import { useMemo, useEffect, useRef, useState } from "react";
 import { useRoom, useSelf } from "@/lib/liveblocks.config";
 import { getYjsProviderForRoom } from "@liveblocks/yjs";
 import { useEditorStore } from "@/app/store/use-editor-store";
 import { saveDocumentContent, getDocumentContent } from "@/lib/document-storage";
-import { TEMPLATE_CONTENT } from "./templates";
 import { PAPER_FORMATS, PAGE_GAP_PX } from "./paper-format";
 
 function isEmptyDoc(json: { content?: unknown[] }): boolean {
   if (!json.content || !Array.isArray(json.content)) return true;
   if (json.content.length === 0) return true;
   const first = json.content[0] as { type?: string; content?: unknown[] } | undefined;
+  if (first?.type === "page") {
+    const pageContent = first.content;
+    if (!pageContent || !Array.isArray(pageContent) || pageContent.length === 0) return true;
+    const only = pageContent[0] as { type?: string; content?: unknown[] } | undefined;
+    return pageContent.length === 1 && only?.type === "paragraph" && !only.content?.length;
+  }
   if (json.content.length === 1 && first?.type === "paragraph") {
     return !first.content || first.content.length === 0;
   }
   return false;
+}
+
+function migrateToPageDoc(json: { type?: string; content?: unknown[] }): { type: string; content: unknown[] } {
+  if (!json.content || !Array.isArray(json.content)) return getDefaultDoc();
+  const first = json.content[0] as { type?: string } | undefined;
+  if (first?.type === "page") return json as { type: string; content: unknown[] };
+  const blocks: unknown[] = [];
+  let currentPage: unknown[] = [];
+  for (const node of json.content as { type?: string }[]) {
+    if (node.type === "pageBreak") {
+      if (currentPage.length) blocks.push({ type: "page", content: currentPage });
+      currentPage = [];
+    } else {
+      currentPage.push(node);
+    }
+  }
+  if (currentPage.length) blocks.push({ type: "page", content: currentPage });
+  if (blocks.length === 0) return getDefaultDoc();
+  return { type: "doc", content: blocks };
 }
 
 const AUTO_SAVE_MS = 2000;
@@ -66,6 +91,7 @@ function CollaborativeEditorInner({
   );
 
   const editor = useEditor({
+    content: getDefaultDoc(),
     onCreate({ editor }) {
       setEditor(editor);
     },
@@ -100,15 +126,17 @@ function CollaborativeEditorInner({
     immediatelyRender: false,
     editorProps: {
       attributes: {
-        style: "padding-left: 56px; padding-right: 56px;",
         class:
-          "focus:outline-none print:border-0 flex flex-col min-h-[var(--editor-page-height,1123px)] w-[var(--editor-page-width,794px)] pt-10 pr-14 pb-10 cursor-text rounded-sm editor-content-area",
+          "focus:outline-none print:border-0 block cursor-text editor-content-area editor-doc-pages",
       },
     },
     extensions: [
       StarterKit.configure({
         history: false,
+        document: false,
       }),
+      DocumentWithPages,
+      PageNode,
       Collaboration.configure({
         document: yDoc,
       }),
@@ -127,7 +155,6 @@ function CollaborativeEditorInner({
       TaskList,
       HighlightSelectionExtension,
       SuggestionRangesExtension,
-      PageBreak,
     ],
   });
 
@@ -156,17 +183,16 @@ function CollaborativeEditorInner({
         try {
           const json = editor.getJSON();
           if (template && !templateAppliedRef.current) {
-            const html = TEMPLATE_CONTENT[template] ?? TEMPLATE_CONTENT.blank;
             if (isEmptyDoc(json)) {
-              editor.commands.setContent(html, false);
+              editor.commands.setContent(getDefaultDoc(), false);
               templateAppliedRef.current = true;
               return;
             }
           }
           if (!templateAppliedRef.current && isEmptyDoc(json) && !restoredFromStorageRef.current) {
-            const saved = getDocumentContent(documentId);
-            if (saved && !isEmptyDoc(saved as { content?: unknown[] })) {
-              editor.commands.setContent(saved, false);
+            const saved = getDocumentContent(documentId) as { content?: unknown[] } | null;
+            if (saved && !isEmptyDoc(saved)) {
+              editor.commands.setContent(migrateToPageDoc(saved), false);
               restoredFromStorageRef.current = true;
             }
           }
@@ -196,74 +222,26 @@ function CollaborativeEditorInner({
     const el = editor.view.dom as HTMLElement;
     const pageHeight = paper.heightPx;
     const gap = PAGE_GAP_PX;
-    const slot = pageHeight + gap;
     el.style.setProperty("--editor-page-width", `${paper.widthPx}px`);
     el.style.setProperty("--editor-page-height", `${pageHeight}px`);
     el.style.setProperty("--editor-page-gap", `${gap}px`);
-    el.style.width = `${paper.widthPx}px`;
     const updateMinHeight = () => {
       const doc = editor.state.doc;
-      const schema = editor.state.schema;
-      const breakType = schema.nodes.pageBreak;
-      let pageBreakCount = 0;
-      let lastBreakEnd = 0;
-      doc.descendants((node, pos) => {
-        if (node.type === breakType) {
-          pageBreakCount++;
-          lastBreakEnd = pos + node.nodeSize;
-        }
+      const pageType = doc.type.schema.nodes.page;
+      let pageCount = 0;
+      doc.descendants((node) => {
+        if (node.type === pageType) pageCount++;
         return true;
       });
-      const hasContentAfterLastBreak = (() => {
-        if (pageBreakCount === 0) return true;
-        let found = false;
-        doc.nodesBetween(lastBreakEnd, doc.content.size, (node) => {
-          if (node.type === breakType) return true;
-          if (node.type.name === "paragraph" && (!node.content || node.content.size === 0))
-            return true;
-          found = true;
-          return false;
-        });
-        return found;
-      })();
-      const pagesFromBreaks = pageBreakCount === 0
-        ? 1
-        : pageBreakCount + (hasContentAfterLastBreak ? 1 : 0);
-      let pagesFromCursor = pagesFromBreaks;
-      try {
-        const { from } = editor.state.selection;
-        const coords = editor.view.coordsAtPos(from);
-        const baseTop = editor.view.coordsAtPos(1).top;
-        const y = coords.top - baseTop;
-        if (y < pageHeight) {
-          pagesFromCursor = 1;
-        } else {
-          pagesFromCursor = Math.max(
-            2,
-            2 + Math.floor((y - pageHeight - gap) / slot)
-          );
-        }
-      } catch {
-        // coordsAtPos can fail before layout; ignore
-      }
-      const effectivePages = Math.max(pagesFromBreaks, pagesFromCursor);
+      if (pageCount === 0) pageCount = 1;
       const totalMinHeight =
-        effectivePages * pageHeight + (effectivePages - 1) * gap;
+        pageCount * pageHeight + (pageCount - 1) * gap;
       el.style.minHeight = `${totalMinHeight}px`;
       setTotalPageMinHeight(totalMinHeight);
     };
-    const scheduleMinHeight = () => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(updateMinHeight);
-      });
-    };
     updateMinHeight();
-    editor.on("update", scheduleMinHeight);
-    editor.on("selectionUpdate", scheduleMinHeight);
-    return () => {
-      editor.off("update", scheduleMinHeight);
-      editor.off("selectionUpdate", scheduleMinHeight);
-    };
+    editor.on("update", updateMinHeight);
+    return () => editor.off("update", updateMinHeight);
   }, [editor, paper.widthPx, paper.heightPx]);
 
   useEffect(() => {

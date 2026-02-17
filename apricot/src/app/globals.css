@@ -141,18 +141,61 @@ a:focus-visible,
 .editor-paper-wrapper {
   --editor-page-height: 1123px;
   --editor-page-width: 794px;
-  --editor-page-gap: 24px;
+  --editor-page-gap: 48px;
+}
+.editor-paper {
+  display: block;
 }
 
-/* Content area: solid white; only the page-break node draws the gap (no repeating stripes = no fake intermediary page) */
-.editor-content-area {
+/* Content area: doc is a sequence of page cards, block flow top to bottom */
+.editor-content-area.editor-doc-pages {
+  background: transparent;
+  min-height: 0;
+  width: 100%;
+  display: block !important;
+}
+/* Every direct child (page node) stacks top to bottom, no overlap */
+.editor-content-area.editor-doc-pages > [data-node-view-wrapper],
+.editor-content-area.editor-doc-pages > .editor-page-card {
+  display: block !important;
+  position: relative !important;
+}
+
+/* Page as card: block layout, no overlap, strict top-to-bottom sequence */
+.editor-page-card,
+[data-node-view-wrapper].editor-page-card {
+  display: block !important;
+  position: relative !important;
+  flex-shrink: 0 !important;
+  margin-bottom: var(--editor-page-gap, 48px);
   background: white;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.3);
+  border-radius: 2px;
+  overflow: hidden;
+  box-sizing: border-box;
+  min-height: var(--editor-page-height, 1123px);
+  width: var(--editor-page-width, 794px);
+}
+.editor-page-card:last-child,
+[data-node-view-wrapper].editor-page-card:last-child {
+  margin-bottom: 0;
+}
+.editor-page-card-inner {
+  padding: 40px 56px 40px 56px;
+  min-height: 100%;
+  box-sizing: border-box;
+  display: block;
+}
+/* Ensure node view content doesn't break out or overlap */
+.editor-page-card [data-node-view-content] {
+  display: block;
+  position: relative;
 }
 
 /* Page break node (creates real spacing between pages) */
 .tiptap .page-break {
-  height: var(--editor-page-gap, 24px);
-  min-height: var(--editor-page-gap, 24px);
+  height: var(--editor-page-gap, 48px);
+  min-height: var(--editor-page-gap, 48px);
   flex-shrink: 0; /* prevent gap collapsing inside flex container */
   margin: 0 -56px; /* match editor side padding so gap spans full page width */
   background: #f8f9fa; /* same as workspace background */
@@ -191,6 +234,16 @@ a:focus-visible,
     break-inside: auto;
     background: white !important;
     background-image: none !important;
+  }
+  .editor-page-card {
+    break-after: page;
+    page-break-after: always;
+    margin-bottom: 0 !important;
+    box-shadow: none !important;
+  }
+  .editor-page-card:last-child {
+    break-after: auto;
+    page-break-after: auto;
   }
   .tiptap p,
   .tiptap h1,
