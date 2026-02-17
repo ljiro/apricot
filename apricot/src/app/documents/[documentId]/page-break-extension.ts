@@ -83,10 +83,6 @@ export const PageBreak = Node.create({
             });
             const pageHeight = readPageHeightPx(view.dom as HTMLElement);
             const contentDigest = parts.join(",") + "|" + pageHeight;
-            if (contentDigest === lastContentDigest) return;
-            lastContentDigest = contentDigest;
-            const gap = PAGE_GAP_PX;
-            const slot = pageHeight + gap;
             const breakNode = breakType.create();
             const breakSize = breakNode.nodeSize;
 
@@ -97,6 +93,27 @@ export const PageBreak = Node.create({
               return true;
             });
             existingBreakPos.sort((a, b) => a - b);
+
+            const hasTrailingBreak = (): boolean => {
+              if (existingBreakPos.length === 0) return false;
+              const lastBreakPos = existingBreakPos[existingBreakPos.length - 1]!;
+              const after = lastBreakPos + breakSize;
+              if (after >= doc.content.size) return true;
+              let onlyEmpty = true;
+              doc.nodesBetween(after, doc.content.size, (node) => {
+                if (node.type === breakType) return true;
+                if (node.type.name === "paragraph" && (!node.content || node.content.size === 0))
+                  return true;
+                onlyEmpty = false;
+                return false;
+              });
+              return onlyEmpty;
+            };
+
+            if (contentDigest === lastContentDigest && !hasTrailingBreak()) return;
+            lastContentDigest = contentDigest;
+            const gap = PAGE_GAP_PX;
+            const slot = pageHeight + gap;
 
             const baseTop = view.coordsAtPos(1).top;
 
