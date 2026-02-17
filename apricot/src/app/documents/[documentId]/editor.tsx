@@ -24,7 +24,7 @@ import { getYjsProviderForRoom } from "@liveblocks/yjs";
 import { useEditorStore } from "@/app/store/use-editor-store";
 import { saveDocumentContent, getDocumentContent } from "@/lib/document-storage";
 import { TEMPLATE_CONTENT } from "./templates";
-import { PAPER_FORMATS } from "./paper-format";
+import { PAPER_FORMATS, PAGE_GAP_PX } from "./paper-format";
 
 function isEmptyDoc(json: { content?: unknown[] }): boolean {
   if (!json.content || !Array.isArray(json.content)) return true;
@@ -189,14 +189,43 @@ function CollaborativeEditorInner({
     };
   }, [editor, template, yProvider, documentId]);
 
+  // Apply paper dimensions and content-area min-height (full page slots for each page)
   useEffect(() => {
     if (!editor?.view?.dom) return;
     const el = editor.view.dom as HTMLElement;
     el.style.setProperty("--editor-page-width", `${paper.widthPx}px`);
     el.style.setProperty("--editor-page-height", `${paper.heightPx}px`);
-    el.style.minHeight = `${paper.heightPx}px`;
+    el.style.setProperty("--editor-page-gap", `${PAGE_GAP_PX}px`);
     el.style.width = `${paper.widthPx}px`;
+    // Count page breaks so content area has min-height for full page slots (A4/Letter/Legal)
+    let pageBreakCount = 0;
+    editor.state.doc.descendants((node) => {
+      if (node.type.name === "pageBreak") pageBreakCount++;
+      return true;
+    });
+    const totalMinHeight =
+      (pageBreakCount + 1) * paper.heightPx + pageBreakCount * PAGE_GAP_PX;
+    el.style.minHeight = `${totalMinHeight}px`;
   }, [editor, paper.widthPx, paper.heightPx]);
+
+  // Update content-area min-height when doc changes (e.g. pagination adds/removes breaks)
+  useEffect(() => {
+    if (!editor?.view?.dom) return;
+    const el = editor.view.dom as HTMLElement;
+    const updateMinHeight = () => {
+      let pageBreakCount = 0;
+      editor.state.doc.descendants((node) => {
+        if (node.type.name === "pageBreak") pageBreakCount++;
+        return true;
+      });
+      const totalMinHeight =
+        (pageBreakCount + 1) * paper.heightPx + pageBreakCount * PAGE_GAP_PX;
+      el.style.minHeight = `${totalMinHeight}px`;
+    };
+    updateMinHeight();
+    editor.on("update", updateMinHeight);
+    return () => editor.off("update", updateMinHeight);
+  }, [editor, paper.heightPx]);
 
   useEffect(() => {
     const id = "apricot-print-page-size";
@@ -228,6 +257,7 @@ function CollaborativeEditorInner({
           width: paper.widthPx,
           ["--editor-page-height" as string]: `${paper.heightPx}px`,
           ["--editor-page-width" as string]: `${paper.widthPx}px`,
+          ["--editor-page-gap" as string]: `${PAGE_GAP_PX}px`,
         }}
       >
         <div

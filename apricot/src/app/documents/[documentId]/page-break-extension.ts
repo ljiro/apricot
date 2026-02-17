@@ -81,11 +81,10 @@ export const PageBreak = Node.create({
               parts.push(node.type.name + ":" + idx + ":" + node.nodeSize);
               idx++;
             });
-            const contentDigest = parts.join(",");
+            const pageHeight = readPageHeightPx(view.dom as HTMLElement);
+            const contentDigest = parts.join(",") + "|" + pageHeight;
             if (contentDigest === lastContentDigest) return;
             lastContentDigest = contentDigest;
-
-            const pageHeight = readPageHeightPx(view.dom as HTMLElement);
             const gap = PAGE_GAP_PX;
             const slot = pageHeight + gap;
             const breakNode = breakType.create();

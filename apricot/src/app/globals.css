@@ -159,7 +159,7 @@ a:focus-visible,
 
 /* Page break node (creates real spacing between pages) */
 .tiptap .page-break {
-  height: 24px;
+  height: var(--editor-page-gap, 24px);
   margin: 0 -56px; /* match editor side padding */
   background: #f8f9fa; /* same as workspace background */
   position: relative;
