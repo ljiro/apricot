@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useEditorStore } from "@/app/store/use-editor-store";
 import { saveDocumentContent, deleteDocumentContent } from "@/lib/document-storage";
+import { PAPER_FORMATS, type PaperFormatId } from "./paper-format";
 import { removeRecentDoc } from "@/lib/recent-docs";
 import { toast } from "sonner";
 
@@ -38,7 +39,7 @@ const TITLE_STORAGE_KEY = "apricot-doc-title";
 
 export function MenuBar({ documentId }: { documentId: string }) {
   const router = useRouter();
-  const { editor } = useEditorStore();
+  const { editor, pageFormat, setPageFormat } = useEditorStore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const handleSave = () => {
@@ -131,7 +132,24 @@ export function MenuBar({ documentId }: { documentId: string }) {
                 <DropdownMenuItem className="cursor-pointer">Full screen</DropdownMenuItem>
               </>
             )}
-            {(label === "Insert" || label === "Format" || label === "Tools" || label === "Help") && (
+            {label === "Format" && (
+              <>
+                <DropdownMenuItem className="cursor-pointer text-[#5f6368] font-medium" onSelect={(e) => e.preventDefault()}>
+                  Page format
+                </DropdownMenuItem>
+                {(["a4", "letter", "legal"] as const).map((id) => (
+                  <DropdownMenuItem
+                    key={id}
+                    className="cursor-pointer pl-6"
+                    onClick={() => setPageFormat(id)}
+                  >
+                    {PAPER_FORMATS[id].label}
+                    {pageFormat === id && " ✓"}
+                  </DropdownMenuItem>
+                ))}
+              </>
+            )}
+            {(label === "Insert" || label === "Tools" || label === "Help") && (
               <DropdownMenuItem className="cursor-pointer text-[#5f6368]">
                 More options coming soon
               </DropdownMenuItem>

@@ -17,6 +17,7 @@ import { HighlightSelectionExtension } from "./highlight-selection-extension";
 import { SuggestionRangesExtension } from "./suggestion-ranges-extension";
 import { SuggestionCardsOverlay } from "./suggestion-cards-overlay";
 import { SyncStorageToEditor } from "./sync-storage-to-editor";
+import { PageBreak } from "./page-break-extension";
 import { useMemo, useEffect, useRef } from "react";
 import { useRoom, useSelf } from "@/lib/liveblocks.config";
 import { getYjsProviderForRoom } from "@liveblocks/yjs";
@@ -100,7 +101,7 @@ function CollaborativeEditorInner({
       attributes: {
         style: "padding-left: 56px; padding-right: 56px;",
         class:
-          "focus:outline-none print:border-0 bg-white flex flex-col min-h-[var(--editor-page-height,1123px)] w-[var(--editor-page-width,794px)] pt-10 pr-14 pb-10 cursor-text rounded-sm editor-content-area",
+          "focus:outline-none print:border-0 flex flex-col min-h-[var(--editor-page-height,1123px)] w-[var(--editor-page-width,794px)] pt-10 pr-14 pb-10 cursor-text rounded-sm editor-content-area",
       },
     },
     extensions: [
@@ -125,6 +126,7 @@ function CollaborativeEditorInner({
       TaskList,
       HighlightSelectionExtension,
       SuggestionRangesExtension,
+      PageBreak,
     ],
   });
 

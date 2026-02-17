@@ -137,21 +137,41 @@ a:focus-visible,
   border-bottom: 1px solid rgba(245, 158, 11, 0.5);
 }
 
-/* Editor paper: visual page break line at each page height */
+/* Editor paper sizing vars (set by editor) */
 .editor-paper-wrapper {
   --editor-page-height: 1123px;
   --editor-page-width: 794px;
+  --editor-page-gap: 24px;
 }
-.editor-paper {
-  background-image: repeating-linear-gradient(
+
+/* Content area: repeating page + gap so the gap is never "page" (fixes space between pages) */
+.editor-content-area {
+  background-image: linear-gradient(
     to bottom,
-    transparent 0,
-    transparent calc(var(--editor-page-height) - 1px),
-    rgba(0, 0, 0, 0.06) calc(var(--editor-page-height) - 1px),
-    rgba(0, 0, 0, 0.06) var(--editor-page-height)
+    white 0,
+    white var(--editor-page-height),
+    #f8f9fa var(--editor-page-height),
+    #f8f9fa calc(var(--editor-page-height) + var(--editor-page-gap))
   );
-  background-position: 0 0;
-  background-size: 100% var(--editor-page-height);
+  background-size: 100% calc(var(--editor-page-height) + var(--editor-page-gap));
+  background-repeat: repeat-y;
+}
+
+/* Page break node (creates real spacing between pages) */
+.tiptap .page-break {
+  height: 24px;
+  margin: 0 -56px; /* match editor side padding */
+  background: #f8f9fa; /* same as workspace background */
+  position: relative;
+}
+.tiptap .page-break::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(60, 64, 67, 0.18);
 }
 
 /* Print: page size and breaks */
@@ -164,8 +184,17 @@ a:focus-visible,
     background-image: none !important;
     box-shadow: none !important;
   }
+  .tiptap .page-break {
+    height: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    break-after: page;
+    page-break-after: always;
+  }
   .editor-content-area {
     break-inside: auto;
+    background: white !important;
+    background-image: none !important;
   }
   .tiptap p,
   .tiptap h1,

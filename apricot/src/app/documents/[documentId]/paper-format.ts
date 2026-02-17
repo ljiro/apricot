@@ -35,3 +35,6 @@ export const PAPER_FORMATS: Record<
 };
 
 export const DEFAULT_PAPER_FORMAT: PaperFormatId = "a4";
+
+/** Vertical space between pages in the editor (px) */
+export const PAGE_GAP_PX = 24;
